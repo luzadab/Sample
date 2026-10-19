@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shipment Booking Tracker</title>
+  <!-- Google Sign-In SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --header-bg: #1f4e78;
+      --header-color: #ffffff;
+      --border-color: #d9d9d9;
+      --hover-color: #f2f2f2;
+      --active-tab-bg: #ffffff;
+      --inactive-tab-bg: #e1e1e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Navigation / App Header */
+    header {
+      background-color: #0b2545;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-title h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      outline: none;
+      padding: 2px 6px;
+      border: 1px transparent dashed;
+      border-radius: 3px;
+    }
+
+    .app-title h1:hover, .app-title h1:focus {
+      border-color: #ffffff88;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #fff;
+    }
+
+    .user-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    /* Toolbar Section */
+    .toolbar {
+      background: #ffffff;
+      padding: 8px 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .search-container {
+      position: relative;
+      flex-grow: 1;
+      max-width: 400px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #107c41; /* Excel Green */
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0b5c30;
+    }
+
+    .btn-secondary {
+      background-color: #e0e0e0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background-color: #d0d0d0;
+    }
+
+    /* Grid Container */
+    .grid-container {
+      flex-grow: 1;
+      overflow: auto;
+      position: relative;
+      background: white;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.82rem;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 6px 8px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    th {
+      background-color: var(--header-bg);
+      color: var(--header-color);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    th:hover {
+      background-color: #153d5e;
+    }
+
+    th .sort-icon {
+      font-size: 0.7rem;
+      margin-left: 4px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #fdfdfd;
+    }
+
+    tr:hover {
+      background-color: var(--hover-color);
+    }
+
+    td[contenteditable="true"]:focus {
+      outline: 2px solid #107c41;
+      background-color: #fff;
+    }
+
+    .read-only {
+      background-color: #f4f4f4;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    /* Select Dropdown Styling */
+    select.cell-select {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 0.82rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Tabs Styling */
+    .tab-bar {
+      display: flex;
+      background-color: #eaeaea;
+      border-top: 1px solid var(--border-color);
+      padding-left: 10px;
+      align-items: center;
+    }
+
+    .tabs-wrapper {
+      display: flex;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      background-color: var(--inactive-tab-bg);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      margin-right: 2px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+    }
+
+    .tab.active {
+      background-color: var(--active-tab-bg);
+      font-weight: bold;
+      border-top: 3px solid #107c41;
+    }
+
+    .tab .close-tab {
+      font-size: 0.75rem;
+      border-radius: 50%;
+      padding: 0 4px;
+    }
+
+    .tab .close-tab:hover {
+      background-color: #ccc;
+      color: #000;
+    }
+
+    .add-tab-btn {
+      padding: 4px 10px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #555;
+    }
+
+    .add-tab-btn:hover {
+      color: #000;
+    }
+
+    /* Notification Modal / Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #d9534f;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 4px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+      font-size: 0.85rem;
+    }
+
+    /* Column Width Adjustments */
+    .col-small { width: 80px; }
+    .col-med { width: 130px; }
+    .col-large { width: 180px; }
+  </style>
+</head>
+<body>
+
+  <!-- Application Header -->
+  <header>
+    <div class="app-title">
+      <h1 id="appFileName" contenteditable="true" title="Click to rename file">Shipment Tracking Master Sheet</h1>
+    </div>
+
+    <!-- User Profile & Google Login -->
+    <div class="user-profile">
+      <div id="g_id_onload"
+           data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse">
+      </div>
+      <div class="g_id_signin" data-type="standard" data-size="small" id="googleSignInBtn"></div>
+      
+      <div id="userInfo" style="display: none; flex-direction: row; align-items: center; gap: 8px;">
+        <span class="user-name" id="userName">User</span>
+        <img src="" alt="Profile" class="user-avatar" id="userAvatar">
+      </div>
+    </div>
+  </header>
+
+  <!-- Toolbar Controls -->
+  <div class="toolbar">
+    <div class="search-container">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search any column detail..." onkeyup="filterTable()">
+    </div>
+    <button class="btn btn-primary" onclick="addNewRow()">+ Add Row</button>
+    <button class="btn btn-secondary" onclick="triggerPasteModal()">Paste Bulk Data</button>
+    <span style="font-size: 0.75rem; color: #666; margin-left: auto;">* Single-click any cell to edit. Headers cannot be edited.</span>
+  </div>
+
+  <!-- Spreadsheet Main Area -->
+  <div class="grid-container">
+    <table id="excelTable">
+      <thead>
+        <tr id="tableHeader">
+          <!-- Header dynamically constructed -->
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Rows dynamically rendered -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Excel Tab Control Bar -->
+  <div class="tab-bar">
+    <div class="tabs-wrapper" id="tabsWrapper">
+      <div class="tab active" onclick="switchTab('active')">Active Bookings</div>
+      <div class="tab" onclick="switchTab('issueY')">Issue Y Log</div>
+    </div>
+    <button class="add-tab-btn" onclick="addNewTab()" title="Add Custom Tab">+</button>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // --- Global Application State ---
+    let currentUser = {
+      name: "Guest User",
+      email: "guest@company.com",
+      picture: "https://via.placeholder.com/36"
+    };
+
+    const columns = [
+      { key: 'pic', label: 'PIC', width: 'col-small' },
+      { key: 'vvd', label: 'VVD', width: 'col-small' },
+      { key: 'pol', label: 'POL', width: 'col-small' },
+      { key: 'atd', label: 'DATE & TIME (ATD)', width: 'col-large', type: 'datetime-local' },
+      { key: 'receivedLoadlist', label: 'RECEIVED OF LOADLIST', width: 'col-med' },
+      { key: 'bookingNumber', label: 'BOOKING NUMBER', width: 'col-med' },
+      { key: 'customerName', label: 'CUSTOMER NAME', width: 'col-large' },
+      { key: 'followUp', label: 'FOLLOW UP', width: 'col-small' },
+      { key: 'date', label: 'DATE', width: 'col-med', type: 'date' },
+      { key: 'pic2', label: 'PIC', width: 'col-small' },
+      { key: 'aging', label: 'AGING (DAYS)', width: 'col-small', readOnly: true },
+      { key: 'issueY', label: 'ISSUE Y', width: 'col-small', type: 'select', options: ['N', 'Y'] },
+      { key: 'offshoreRemarks', label: 'OFFSHORE REMARKS', width: 'col-large' },
+      { key: 'onshoreRemarks', label: 'ONSHORE REMARKS', width: 'col-large' }
+    ];
+
+    // Audit Log Schema appended to Issue Y records
+    // Audit Schema: { timestamp, updatedByEmail, updatedByName, action }
+
+    let dataset = [];
+    let tabs = ['Active Bookings', 'Issue Y Log'];
+    let currentTab = 'Active Bookings';
+    let sortState = { colKey: null, direction: 'asc' };
+
+    // --- Core Initialization ---
+    window.onload = () => {
+      loadLocalStorage();
+      renderHeaders();
+      renderTable();
+    };
+
+    // Google Sign-in Handler
+    function handleCredentialResponse(response) {
+      const responsePayload = parseJwt(response.credential);
+      currentUser = {
+        name: responsePayload.name,
+        email: responsePayload.email,
+        picture: responsePayload.picture
+      };
+
+      document.getElementById('googleSignInBtn').style.display = 'none';
+      document.getElementById('userInfo').style.display = 'flex';
+      document.getElementById('userName').innerText = currentUser.name;
+      document.getElementById('userAvatar').src = currentUser.picture;
+      showToast(`Welcome back, ${currentUser.name}`);
+    }
+
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    // --- Header Rendering & Sorting ---
+    function renderHeaders() {
+      const headerRow = document.getElementById('tableHeader');
+      headerRow.innerHTML = '';
+
+      columns.forEach(col => {
+        const th = document.createElement('th');
+        th.className = col.width;
+        th.innerHTML = `${col.label} <span class="sort-icon" id="sort-${col.key}">↕</span>`;
+        th.onclick = () => sortTable(col.key);
+        headerRow.appendChild(th);
+      });
+
+      if (currentTab === 'Issue Y Log') {
+        const thAudit = document.createElement('th');
+        thAudit.className = 'col-large';
+        thAudit.innerText = 'MODIFIED BY & TIME';
+        headerRow.appendChild(thAudit);
+      }
+    }
+
+    // --- Dynamic Table Rendering ---
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      let filteredData = dataset.filter(row => {
+        if (currentTab === 'Active Bookings') {
+          return row.issueY !== 'Y';
+        } else if (currentTab === 'Issue Y Log') {
+          return row.issueY === 'Y';
+        } else {
+          // Custom user tab filter logic if required
+          return row.customTab === currentTab;
+        }
+      });
+
+      filteredData.forEach((rowData) => {
+        const tr = document.createElement('tr');
+        
+        columns.forEach(col => {
+          const td = document.createElement('td');
+
+          if (col.readOnly) {
+            td.className = 'read-only';
+            td.innerText = calculateAging(rowData.atd);
+          } else if (col.type === 'select') {
+            const select = document.createElement('select');
+            select.className = 'cell-select';
+            col.options.forEach(opt => {
+              const option = document.createElement('option');
+              option.value = opt;
+              option.text = opt;
+              if (rowData[col.key] === opt) option.selected = true;
+              select.appendChild(option);
+            });
+            select.onchange = (e) => updateCell(rowData.id, col.key, e.target.value);
+            td.appendChild(select);
+          } else if (col.type === 'datetime-local' || col.type === 'date') {
+            const input = document.createElement('input');
+            input.type = col.type;
+            input.value = rowData[col.key] || '';
+            input.style.border = 'none';
+            input.style.width = '100%';
+            input.style.background = 'transparent';
+            input.onchange = (e) => updateCell(rowData.id, col.key, e.target.value);
+            td.appendChild(input);
+          } else {
+            td.contentEditable = true;
+            td.innerText = rowData[col.key] || '';
+            // Save on blur/edit completion
+            td.onblur = (e) => {
+              const newValue = e.target.innerText.trim();
+              if (col.key === 'bookingNumber' && newValue !== rowData.bookingNumber) {
+                if (isDuplicateBooking(newValue, rowData.id)) {
+                  showToast(`Duplicate Booking Number "${newValue}" detected! Reverting.`);
+                  e.target.innerText = rowData.bookingNumber || '';
+                  return;
+                }
+              }
+              updateCell(rowData.id, col.key, newValue);
+            };
+          }
+
+          tr.appendChild(td);
+        });
+
+        // Audit Trail Column for Issue Y Tab
+        if (currentTab === 'Issue Y Log') {
+          const tdAudit = document.createElement('td');
+          tdAudit.className = 'read-only';
+          tdAudit.innerText = rowData.lastModifiedBy 
+            ? `${rowData.lastModifiedBy} (${rowData.lastModifiedAt})` 
+            : 'N/A';
+          tr.appendChild(tdAudit);
+        }
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- Aging Calculation Logic ---
+    function calculateAging(atdDateTimeStr) {
+      if (!atdDateTimeStr) return 0;
+      const atdDate = new Date(atdDateTimeStr);
+      const today = new Date();
+      if (isNaN(atdDate.getTime())) return 0;
+
+      const diffTime = today - atdDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    }
+
+    // --- Duplicate Validation ---
+    function isDuplicateBooking(bookingNum, currentId = null) {
+      if (!bookingNum) return false;
+      return dataset.some(row => row.bookingNumber === bookingNum && row.id !== currentId);
+    }
+
+    // --- Cell Update & Auto-Save ---
+    function updateCell(rowId, colKey, value) {
+      const row = dataset.find(r => r.id === rowId);
+      if (!row) return;
+
+      row[colKey] = value;
+      row.lastModifiedBy = currentUser.email;
+      row.lastModifiedAt = new Date().toLocaleString();
+
+      // Recalculate aging dynamically if ATD updated
+      if (colKey === 'atd') {
+        row.aging = calculateAging(value);
+      }
+
+      saveLocalStorage();
+
+      // Auto-hide row if status changed to 'Y' under Active Tab
+      if (colKey === 'issueY') {
+        showToast(`Booking ${row.bookingNumber || ''} marked as Issue Y.`);
+        renderTable();
+      }
+    }
+
+    // --- Add Row Logic ---
+    function addNewRow() {
+      const newRow = {
+        id: Date.now(),
+        pic: '',
+        vvd: '',
+        pol: '',
+        atd: '',
+        receivedLoadlist: '',
+        bookingNumber: '',
+        customerName: '',
+        followUp: '',
+        date: '',
+        pic2: '',
+        aging: 0,
+        issueY: 'N',
+        offshoreRemarks: '',
+        onshoreRemarks: '',
+        customTab: currentTab,
+        lastModifiedBy: currentUser.email,
+        lastModifiedAt: new Date().toLocaleString()
+      };
+
+      dataset.unshift(newRow);
+      saveLocalStorage();
+      renderTable();
+    }
+
+    // --- Bulk Paste Feature ---
+    function triggerPasteModal() {
+      const rawData = prompt("Paste Tab-Delimited Data (e.g. copied directly from Excel):");
+      if (!rawData) return;
+
+      const rows = rawData.split('\n');
+      let addedCount = 0;
+      let duplicateCount = 0;
+
+      rows.forEach(rowStr => {
+        if (!rowStr.trim()) return;
+        const cells = rowStr.split('\t');
+        const bookingNo = cells[5] ? cells[5].trim() : '';
+
+        if (bookingNo && isDuplicateBooking(bookingNo)) {
+          duplicateCount++;
+          return; // Skip duplicate records
+        }
+
+        const newRow = {
+          id: Date.now() + Math.random(),
+          pic: cells[0] ? cells[0].trim() : '',
+          vvd: cells[1] ? cells[1].trim() : '',
+          pol: cells[2] ? cells[2].trim() : '',
+          atd: cells[3] ? cells[3].trim() : '',
+          receivedLoadlist: cells[4] ? cells[4].trim() : '',
+          bookingNumber: bookingNo,
+          customerName: cells[6] ? cells[6].trim() : '',
+          followUp: cells[7] ? cells[7].trim() : '',
+          date: cells[8] ? cells[8].trim() : '',
+          pic2: cells[9] ? cells[9].trim() : '',
+          aging: calculateAging(cells[3]),
+          issueY: cells[11] && cells[11].trim().toUpperCase() === 'Y' ? 'Y' : 'N',
+          offshoreRemarks: cells[12] ? cells[12].trim() : '',
+          onshoreRemarks: cells[13] ? cells[13].trim() : '',
+          customTab: currentTab,
+          lastModifiedBy: currentUser.email,
+          lastModifiedAt: new Date().toLocaleString()
+        };
+
+        dataset.push(newRow);
+        addedCount++;
+      });
+
+      saveLocalStorage();
+      renderTable();
+      showToast(`Bulk Insert Completed: ${addedCount} added, ${duplicateCount} duplicates skipped.`);
+    }
+
+    // --- Table Sorting ---
+    function sortTable(colKey) {
+      if (sortState.colKey === colKey) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.colKey = colKey;
+        sortState.direction = 'asc';
+      }
+
+      dataset.sort((a, b) => {
+        let valA = a[colKey] || '';
+        let valB = b[colKey] || '';
+
+        if (colKey === 'aging') {
+          valA = Number(valA);
+          valB = Number(valB);
+        }
+
+        if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      renderHeaders();
+      document.getElementById(`sort-${colKey}`).innerText = sortState.direction === 'asc' ? '▲' : '▼';
+      renderTable();
+    }
+
+    // --- Search Filter ---
+    function filterTable() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#tableBody tr');
+
+      rows.forEach(tr => {
+        const text = tr.innerText.toLowerCase();
+        tr.style.display = text.includes(query) ? '' : 'none';
+      });
+    }
+
+    // --- Tab Management ---
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      
+      const activeElement = Array.from(document.querySelectorAll('.tab')).find(t => t.innerText.includes(tabName));
+      if (activeElement) activeElement.classList.add('active');
+
+      renderHeaders();
+      renderTable();
+    }
+
+    function addNewTab() {
+      const name = prompt("Enter new tab name:");
+      if (!name || tabs.includes(name)) return;
+
+      tabs.push(name);
+      const wrapper = document.getElementById('tabsWrapper');
+      
+      const tabEl = document.createElement('div');
+      tabEl.className = 'tab';
+      tabEl.innerHTML = `${name} <span class="close-tab" onclick="deleteTab(event, '${name}')">×</span>`;
+      tabEl.onclick = () => switchTab(name);
+      
+      wrapper.appendChild(tabEl);
+      switchTab(name);
+    }
+
+    function deleteTab(event, tabName) {
+      event.stopPropagation();
+      if (tabName === 'Active Bookings' || tabName === 'Issue Y Log') {
+        showToast("System tabs cannot be removed.");
+        return;
+      }
+
+      tabs = tabs.filter(t => t !== tabName);
+      event.target.parentElement.remove();
+      switchTab('Active Bookings');
+    }
+
+    // --- Persistence (Local Storage) ---
+    function saveLocalStorage() {
+      localStorage.setItem('shipment_tracker_data', JSON.stringify(dataset));
+      localStorage.setItem('shipment_tracker_filename', document.getElementById('appFileName').innerText);
+    }
+
+    function loadLocalStorage() {
+      const savedData = localStorage.getItem('shipment_tracker_data');
+      const savedFileName = localStorage.getItem('shipment_tracker_filename');
+
+      if (savedData) dataset = JSON.parse(savedData);
+      if (savedFileName) document.getElementById('appFileName').innerText = savedFileName;
+    }
+
+    // Auto-save filename edit
+    document.getElementById('appFileName').addEventListener('blur', saveLocalStorage);
+
+    // Toast Utility
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+  </script>
+</body>
+</html>
